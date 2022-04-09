@@ -57,8 +57,8 @@ startGame.addEventListener('click',starts)
       'img/plant1.png',
       'img/plant1.png',
       
-      'img/bullet1.png',
-      'img/bullet1.png',
+      'img/Bullet1.png',
+      'img/Bullet1.png',
   
       'img/Goomba1.png',
       'img/Goomba1.png'
