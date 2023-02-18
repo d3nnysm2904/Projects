@@ -1,7 +1,7 @@
 
 import './App.css';
 import Form from './Form';
-import History from './History';
+// import History from './History';
 import "./Form.css";
 
 function App ()
