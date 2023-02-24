@@ -49,7 +49,7 @@ const Form = () =>
         <div  >
 
 
-            <form onSubmit={ handleSubmit } >
+            <form className='Form' onSubmit={ handleSubmit } >
 
                 <input
                     id="noun"
