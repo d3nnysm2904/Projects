@@ -18,7 +18,7 @@ const tokens = {};
 
 beforeEach(async function() {
   async function _pwd(password) {
-    return await bcrypt.hash(password, 1);
+    return await bcrypt.hash( password, 12 );
   }
 
   let sampleUsers = [
@@ -48,8 +48,9 @@ describe("POST /auth/register", function() {
         email: "new@newuser.com",
         phone: "1233211221"
       });
-    expect(response.statusCode).toBe(201);
-    expect(response.body).toEqual({ token: expect.any(String) });
+    expect( response.statusCode ).toBe( 200 );
+    expect( response.body ).toEqual( { token: expect.any( String ) } );
+    expect( admin ).toBe( false )
 
     let { username, admin } = jwt.verify(response.body.token, SECRET_KEY);
     expect(username).toBe("new_user");
@@ -83,7 +84,7 @@ describe("POST /auth/login", function() {
         username: "u1",
         password: "pwd1"
       });
-    expect(response.statusCode).toBe(200);
+    expect( response.statusCode ).toBe( 201 );
     expect(response.body).toEqual({ token: expect.any(String) });
 
     let { username, admin } = jwt.verify(response.body.token, SECRET_KEY);

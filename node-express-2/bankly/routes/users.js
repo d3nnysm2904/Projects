@@ -42,7 +42,12 @@ router.get('/:username', authUser, requireLogin, async function(
 ) {
   try {
     let user = await User.get(req.params.username);
+    if ( !user )
+    {
+      throw new ExpressError( 'No username found', 404 );
+    }
     return res.json({ user });
+
   } catch (err) {
     return next(err);
   }
@@ -63,7 +68,7 @@ router.get('/:username', authUser, requireLogin, async function(
  *
  */
 
-router.patch('/:username', authUser, requireLogin, requireAdmin, async function(
+router.patch( '/:username', authUser, requireLogin, async function (
   req,
   res,
   next
