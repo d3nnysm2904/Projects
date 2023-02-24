@@ -1,14 +1,15 @@
+import React from 'react';
+import Form from './files/Form';
+import "./files/Form.css";
 
-import './App.css';
-import Form from './Form';
-import History from './History';
-import "./Form.css";
 
 function App ()
 {
   return (
     <div className="App">
+
       <Form />
+
 
     </div>
   );
