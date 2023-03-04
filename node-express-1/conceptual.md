@@ -26,6 +26,7 @@ A async function return a promise
 
 
 - What does the `next` function do?
+  The `next` function is used to continue if a error is encountered 
 
 - What are some issues with the following code? (consider all aspects: performance, structure, naming, etc)
 
@@ -38,3 +39,5 @@ async function getUsers() {
   return [elie, matt, joel];
 }
 ```
+Is making three different request
+If one request is never resolved , then the others will not be resolved 

@@ -20,7 +20,7 @@ let app = express()
 ```
 
 ## Issue 3:
-Missing :
+-Missing :
 
 ```sh
 app.use(express.json());
@@ -28,10 +28,17 @@ app.use(express.urlencoded({ extended: true }));
 '''
 
 
-##Issue 4:
+## Issue 4:
 
-Missing async keyword :
+-Missing async keyword :
 ```sh
 app.post( "/", async ( req, res, next ) =>{
     ...
 }
+```
+
+## Issue 5:
+-Result variable was returning unfinished promises so i added 'data'
+```sh
+let data = await axios.all(results);
+```
