@@ -1,16 +1,16 @@
 // Step One: Simplifying Expressions
 // Simplify the following big O expressions as much as possible:
 
-O( n + 10 );
-O( 100 * n );
-O( 25 );
-O( n ^ 2 + n ^ 3 );
-O( n + n + n + n );
-O( 1000 * log( n ) + n );
-O( 1000 * n * log( n ) + n );
-O( 2 ^ n + n ^ 2 );
-O( 5 + 3 + 1 );
-O( n + n ^ ( 1 / 2 ) + n ^ 2 + n * log( n ) ^ 10 );
+O( n + 10 );  // O(n)
+O( 100 * n ); //O(n)
+O( 25 );  //O(1)
+O( n ^ 2 + n ^ 3 );  //O(n^2)
+O( n + n + n + n ); //O(n)
+O( 1000 * log( n ) + n ); //O(n)
+O( 1000 * n * log( n ) + n ); //O(log n)
+O( 2 ^ n + n ^ 2 ); //O(n^2)
+O( 5 + 3 + 1 ); // O(1);
+O( n + n ^ ( 1 / 2 ) + n ^ 2 + n * log( n ) ^ 10 );// O(n^2)
 
 
 // Step 2
@@ -129,4 +129,4 @@ function vowelCount ( str )
 // BONUS
 
 // What’s the space complexity of the Object.keys() function?
-O( n );
+// O( n );
