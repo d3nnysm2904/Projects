@@ -1,9 +1,10 @@
 """SQLAlchemy models for Warbler."""
 
 from datetime import datetime
-
+from email.policy import default
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 
 bcrypt = Bcrypt()
 db = SQLAlchemy()
@@ -30,7 +31,7 @@ class Follows(db.Model):
 class Likes(db.Model):
     """Mapping user likes to warbles."""
 
-    __tablename__ = 'likes' 
+    __tablename__ = 'likes'
 
     id = db.Column(
         db.Integer,
@@ -49,7 +50,7 @@ class Likes(db.Model):
     )
 
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     """User in the system."""
 
     __tablename__ = 'users'
@@ -82,11 +83,11 @@ class User(db.Model):
     )
 
     bio = db.Column(
-        db.Text,
+        db.Text, default='I like springboard'
     )
 
     location = db.Column(
-        db.Text,
+        db.Text, default='FLorida'
     )
 
     password = db.Column(
@@ -94,7 +95,8 @@ class User(db.Model):
         nullable=False,
     )
 
-    messages = db.relationship('Message')
+    messages = db.relationship(
+        'Message', back_populates="user", passive_deletes=True)
 
     followers = db.relationship(
         "User",
@@ -121,13 +123,15 @@ class User(db.Model):
     def is_followed_by(self, other_user):
         """Is this user followed by `other_user`?"""
 
-        found_user_list = [user for user in self.followers if user == other_user]
+        found_user_list = [
+            user for user in self.followers if user == other_user]
         return len(found_user_list) == 1
 
     def is_following(self, other_user):
         """Is this user following `other_use`?"""
 
-        found_user_list = [user for user in self.following if user == other_user]
+        found_user_list = [
+            user for user in self.following if user == other_user]
         return len(found_user_list) == 1
 
     @classmethod
@@ -169,12 +173,15 @@ class User(db.Model):
 
         return False
 
+  
+
 
 class Message(db.Model):
     """An individual message ("warble")."""
 
     __tablename__ = 'messages'
 
+   
     id = db.Column(
         db.Integer,
         primary_key=True,
@@ -197,7 +204,7 @@ class Message(db.Model):
         nullable=False,
     )
 
-    user = db.relationship('User')
+    user = db.relationship('User', back_populates="messages")
 
 
 def connect_db(app):

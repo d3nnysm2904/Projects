@@ -1,15 +1,16 @@
 import os
+from flask import Flask, render_template, request, flash, redirect, session, g, jsonify, url_for
+from sqlalchemy.exc import IntegrityError, PendingRollbackError
+from forms import UserAddForm, UserEditForm, LoginForm, MessageForm
+from models import Likes, db, connect_db, User, Message, Follows
+from sqlalchemy import text, and_
+from flask_login import LoginManager, login_user, login_required, logout_user
 
-from flask import Flask, render_template, request, flash, redirect, session, g
-from flask_debugtoolbar import DebugToolbarExtension
-from sqlalchemy.exc import IntegrityError
-
-from forms import UserAddForm, LoginForm, MessageForm
-from models import db, connect_db, User, Message
 
 CURR_USER_KEY = "curr_user"
 
 app = Flask(__name__)
+
 
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
@@ -17,17 +18,23 @@ app.config['SQLALCHEMY_DATABASE_URI'] = (
     os.environ.get('DATABASE_URL', 'postgresql:///warbler'))
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ECHO'] = False
+app.config['SQLALCHEMY_ECHO'] = True
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
-toolbar = DebugToolbarExtension(app)
+
 
 connect_db(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return g.user
 
 
 ##############################################################################
 # User signup/login/logout
-
 
 @app.before_request
 def add_user_to_g():
@@ -82,7 +89,7 @@ def signup():
             return render_template('users/signup.html', form=form)
 
         do_login(user)
-
+        login_user(user)
         return redirect("/")
 
     else:
@@ -102,6 +109,7 @@ def login():
         if user:
             do_login(user)
             flash(f"Hello, {user.username}!", "success")
+            login_user(user)
             return redirect("/")
 
         flash("Invalid credentials.", 'danger')
@@ -110,10 +118,17 @@ def login():
 
 
 @app.route('/logout')
+@login_required
 def logout():
     """Handle logout of user."""
 
     # IMPLEMENT THIS
+
+    do_logout()
+    logout_user()
+
+    flash('You have been logged out successfully.', 'info')
+    return redirect('/')
 
 
 ##############################################################################
@@ -137,6 +152,7 @@ def list_users():
 
 
 @app.route('/users/<int:user_id>')
+@login_required
 def users_show(user_id):
     """Show user profile."""
 
@@ -150,77 +166,175 @@ def users_show(user_id):
                 .order_by(Message.timestamp.desc())
                 .limit(100)
                 .all())
-    return render_template('users/show.html', user=user, messages=messages)
+
+    msg_likes = get_user_following_messages_and_likes()
+
+    return render_template('users/show.html', user=user, messages=messages,  msg_liked=len(msg_likes[1]))
 
 
 @app.route('/users/<int:user_id>/following')
+@login_required
 def show_following(user_id):
     """Show list of people this user is following."""
 
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
-
     user = User.query.get_or_404(user_id)
-    return render_template('users/following.html', user=user)
+    msg_likes = get_user_following_messages_and_likes()
+    return render_template('users/following.html', user=user, msg_liked=len(msg_likes[1]))
 
 
 @app.route('/users/<int:user_id>/followers')
+@login_required
 def users_followers(user_id):
     """Show list of followers of this user."""
 
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
-
     user = User.query.get_or_404(user_id)
-    return render_template('users/followers.html', user=user)
+    msg_likes = get_user_following_messages_and_likes()
+    return render_template('users/followers.html', user=user, msg_liked=len(msg_likes[1]))
+
+
+@app.route('/users/<int:user_id>/liked')
+@login_required
+def users_liked_msg(user_id):
+    '''Show list of liked masseges for this user'''
+
+    msg_likes = get_user_following_messages_and_likes()
+
+    msgs_ids = [m.message_id for m in msg_likes[1]]
+    masseges = (Message.
+                query.
+                filter(Message.id.in_(msgs_ids))
+                .order_by(Message.timestamp.desc()))
+
+    return render_template('users/show_liked_msg.html', user=g.user, messages=masseges, msg_liked=len(msg_likes[1]))
 
 
 @app.route('/users/follow/<int:follow_id>', methods=['POST'])
+@login_required
 def add_follow(follow_id):
     """Add a follow for the currently-logged-in user."""
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     followed_user = User.query.get_or_404(follow_id)
     g.user.following.append(followed_user)
     db.session.commit()
 
-    return redirect(f"/users/{g.user.id}/following")
+    return redirect(url_for('show_following', user_id=g.user.id))
+    # return redirect(f"/users/{g.user.id}/following")
 
 
 @app.route('/users/stop-following/<int:follow_id>', methods=['POST'])
+@login_required
 def stop_following(follow_id):
     """Have currently-logged-in-user stop following this user."""
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     followed_user = User.query.get(follow_id)
     g.user.following.remove(followed_user)
     db.session.commit()
 
-    return redirect(f"/users/{g.user.id}/following")
+    return redirect(url_for('show_following', user_id=g.user.id))
+    # return redirect(f"/users/{g.user.id}/following")
 
 
 @app.route('/users/profile', methods=["GET", "POST"])
+@login_required
 def profile():
     """Update profile for current user."""
 
     # IMPLEMENT THIS
 
+    form = UserEditForm(obj=g.user)
+
+    if form.validate_on_submit():
+        # Check for user password in order to updated the user information
+
+        if g.user.authenticate(g.user.username, form.password.data):
+
+            g.user.image_url = form.image_url.data or g.user.image_url
+            g.user.header_image_url = form.header_image_url.data or g.user.header_image_url or User.header_image_url.default.arg
+            g.user.bio = form.bio.data or g.user.bio
+
+            # Added a bunch of logic to control duplicate name and email in the db
+            # Because for some reason cant control duplicate name or email with the exeptions
+            # This works for now but is not efficiency can be better
+            user = User.query.filter_by(username=form.username.data).first()
+            if g.user.username == form.username.data:
+                pass
+            else:
+                if not user:
+                    g.user.username = form.username.data
+                else:
+                    form.username.errors.append(
+                        'Username Taken. Please pick another')
+                    return render_template('users/edit.html', form=form)
+
+            user = User.query.filter_by(email=form.email.data).first()
+            if g.user.email == form.email.data:
+                pass
+            else:
+                if not user:
+                    g.user.email = form.email.data
+                else:
+                    form.email.errors.append(
+                        'E-Mail Taken. Please pick another')
+                    return render_template('users/edit.html', form=form)
+
+            db.session.commit()
+
+            flash(f'{g.user.username} updated successfully.', 'info')
+            return redirect(url_for('users_show', user_id=g.user.id))
+            # return redirect(f'/users/{g.user.id}')
+
+            # try:
+            #     # db.session.add(g.user)
+            #     db.session.commit()
+
+            #     flash(f'{g.user.username} updated successfully.', 'info')
+            #     return redirect(f'/users/{g.user.id}')
+
+            # except IntegrityError:
+            #     flash("Username/Mail already taken", 'danger')
+            #     return render_template('users/edit.html', form=form)
+
+        else:
+
+            flash('Invalid Password Information Entered.', 'danger')
+            return redirect('/')
+
+    return render_template('users/edit.html', form=form)
+
+
+@app.route('/users/pwd_change', methods=['GET', "POST"])
+@login_required
+def change_password():
+    """update user password user."""
+
+    form = ChangePasswordForm(obj=g.user)
+
+    if form.validate_on_submit():
+
+        password = form.password.data
+        new_pwd = form.new_pwd.data
+        confirm_pwd = form.confirm_pwd.data
+
+        user = User.password_change(g.user.id, password, new_pwd, confirm_pwd)
+
+        if user == 'pwd_wrong':
+            form.password.errors.append(
+                'Password is incorrect!')
+
+        if user == 'pwd_dont_match':
+            flash('New and Confirm Password do not match', 'danger')
+
+        if user == 'success':
+            flash('Password has Updated', 'info')
+            return redirect('/')
+
+    return render_template('users/change_password.html', form=form)
+
 
 @app.route('/users/delete', methods=["POST"])
+@login_required
 def delete_user():
     """Delete user."""
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     do_logout()
 
@@ -234,15 +348,12 @@ def delete_user():
 # Messages routes:
 
 @app.route('/messages/new', methods=["GET", "POST"])
+@login_required
 def messages_add():
     """Add a message:
 
     Show form if GET. If valid, update message and redirect to user page.
     """
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     form = MessageForm()
 
@@ -251,7 +362,8 @@ def messages_add():
         g.user.messages.append(msg)
         db.session.commit()
 
-        return redirect(f"/users/{g.user.id}")
+        return redirect(url_for('users_show', user_id=g.user.id))
+      # return redirect(f'/users/{g.user.id}')
 
     return render_template('messages/new.html', form=form)
 
@@ -265,18 +377,16 @@ def messages_show(message_id):
 
 
 @app.route('/messages/<int:message_id>/delete', methods=["POST"])
+@login_required
 def messages_destroy(message_id):
     """Delete a message."""
-
-    if not g.user:
-        flash("Access unauthorized.", "danger")
-        return redirect("/")
 
     msg = Message.query.get(message_id)
     db.session.delete(msg)
     db.session.commit()
 
-    return redirect(f"/users/{g.user.id}")
+    return redirect(url_for('users_show', user_id=g.user.id))
+  # return redirect(f'/users/{g.user.id}')
 
 
 ##############################################################################
@@ -284,24 +394,58 @@ def messages_destroy(message_id):
 
 
 @app.route('/')
+# @auth.login_required
 def homepage():
-    """Show homepage:
-
-    - anon users: no messages
-    - logged in: 100 most recent messages of followed_users
-    """
+    '''Show homepage:'''
 
     if g.user:
-        messages = (Message
-                    .query
-                    .order_by(Message.timestamp.desc())
-                    .limit(100)
-                    .all())
 
-        return render_template('home.html', messages=messages)
+        msg_likes = get_user_following_messages_and_likes()
+
+        return render_template('home.html', messages=msg_likes[0], likes=[l.message_id for l in msg_likes[1]])
 
     else:
         return render_template('home-anon.html')
+
+
+@app.route('/users/add_like/<int:msg_id>', methods=['POST'])
+def get_and_add_likes(msg_id):
+    '''Show likes for a user or add a like to for the user
+
+    This is working with a Json Request from the client side
+    it return in json to work on the client
+
+    '''
+
+    action = request.json['action']
+
+    if action == 'add':
+        like = Likes(user_id=g.user.id, message_id=msg_id)
+        db.session.add(like)
+        db.session.commit()
+        return (jsonify({'result': 'add_pass'}), 200)
+
+    if action == 'remove':
+        like_delete = Likes.query.filter_by(
+            user_id=g.user.id, message_id=msg_id).first()
+        db.session.delete(like_delete)
+        db.session.commit()
+        return (jsonify({'result': 'remove_pass'}), 200)
+
+
+@app.errorhandler(404)
+def not_found(e):
+    '''404 Error Handeling'''
+
+    return render_template("404.html")
+
+
+@app.errorhandler(401)
+def custom_401(e):
+    '''401 Error Handeling'''
+
+    flash("Access unauthorized.", "danger")
+    return redirect("/login")
 
 
 ##############################################################################
@@ -320,3 +464,30 @@ def add_header(req):
     req.headers["Expires"] = "0"
     req.headers['Cache-Control'] = 'public, max-age=0'
     return req
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# print what i need to see in the console
+
+
+def get_user_following_messages_and_likes():
+    '''Return messages and likes for a user for the users that he/she is following'''
+
+    user_id_following = (Follows
+                         .query
+                         .filter(Follows.user_being_followed_id == g.user.id)
+                         .all())
+
+    # Return only the messages that the user that is login
+    # for the users that he/she is followings
+    messages = (Message
+                .query
+                .filter(Message.user_id.in_([u.user_following_id for u in user_id_following]))
+                .order_by(Message.timestamp.desc())
+                .limit(100)
+                .all())
+
+    likes = Likes.query.filter_by(user_id=g.user.id).all()
+
+    return (messages, likes)
+
