@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import History from './History';
-import Toggle from './Toggle';
-import 'Form.css'
+
+import 'FormAdd.css'
 
 
 const Form = () =>
