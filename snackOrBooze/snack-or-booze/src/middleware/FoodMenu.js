@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import ".//css/FoodMenu.css"
+import "./css/FoodMenu.css"
 import {
   Card,
   CardBody,
