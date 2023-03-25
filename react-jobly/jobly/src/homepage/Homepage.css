@@ -1,0 +1,14 @@
+.App {
+  background-image: url("employed.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+
+}
+
+.Homepage {
+  /* put around the vertical center of page */
+  height: calc(100vh - 150px);
+  display: flex;
+  align-items: center;
+
+}
