@@ -1,19 +1,18 @@
 .NavBar {
-  background-color: #2f8587;
+  background-color: #c4eb12;
   text-align: center;
   font-weight: bold;
 }
 
 .NavBar a {
-  padding: 0.5em 0;
+
   width: 10em;
   display: inline-block;
-  color: white;
-  text-decoration: none;
+  color: rgb(23, 23, 23);
 }
 
 .NavBar a:hover {
-  background-color: #686b6e;
+  background-color: #deee04;
   color: white !important;
 }
 
