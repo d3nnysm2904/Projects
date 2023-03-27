@@ -1,0 +1,20 @@
+.link-holders a {
+
+  color: white;
+  background-color: #0513e0;
+  border-radius: 10px;
+  margin-left: 10px;
+}
+
+.link-holders a:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
+.link-holders p {
+  color: white;
+  box-shadow: rgba(0, 0, 0, 0.9) 0px 3px 8px;
+  border-radius: 10px;
+  font-size: 18px;
+  margin-left: 10px;
+}

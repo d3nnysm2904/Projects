@@ -1,0 +1,32 @@
+.img-chip {
+  display: inline-grid;
+  margin-top: 80px;
+  margin-left: 350px;
+  width: 90em;
+  height: 90em;
+  border-radius: 10px;
+  background: url(../pics/lays.png) no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  justify-items: center;
+  justify-content: space-around;
+  align-content: center;
+  align-items: start;
+}
+
+h1 {
+  padding: 10px;
+  font-weight: bolder;
+  color: #bdd3d3;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 3px 8px;
+}
+
+a {
+  padding: 5px;
+  font-size: 22px;
+  font-weight: bolder;
+  color: #bdd3d3;
+  box-shadow: rgba(15, 2, 2, 0.9) 0px 3px 8px;
+}

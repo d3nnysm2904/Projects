@@ -1,39 +1,3 @@
-from flask import Flask, redirect, render_template
-from flask_debugtoolbar import DebugToolbarExtension
-
-from models import db, connect_db, Playlist, Song, PlaylistSong
-from forms import NewSongForPlaylistForm, SongForm, PlaylistForm
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///playlist-app'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ECHO'] = True
-
-connect_db(app)
-with app.app_context():
-    db.create_all()
-
-app.config['SECRET_KEY'] = "I'LL NEVER TELL!!"
-
-# Having the Debug Toolbar show redirects explicitly is often useful;
-# however, if you want to turn it off, you can uncomment this line:
-#
-# app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
-
-debug = DebugToolbarExtension(app)
-
-
-@app.route("/")
-def root():
-    """Homepage: redirect to /playlists."""
-
-    return redirect("/playlists")
-
-
-##############################################################################
-# Playlist routes
-
-
 from flask import Flask, redirect, render_template, flash
 from flask_debugtoolbar import DebugToolbarExtension
 
@@ -149,10 +113,12 @@ def add_song():
         db.session.add(new_song)
         db.session.commit()
 
-        flash("Song is been added", "success")
+        flash("Song successfully added", "success")
         return redirect('/songs')
 
     return render_template('new_song.html', form=form)
+    
+
     
 
 
@@ -160,22 +126,24 @@ def add_song():
 def add_song_to_playlist(playlist_id):
     """Add a playlist and redirect to list."""
 
+    # BONUS - ADD THE NECESSARY CODE HERE FOR THIS ROUTE TO WORK
+
+    # THE SOLUTION TO THIS IS IN A HINT IN THE ASSESSMENT INSTRUCTIONS
+
     playlist = Playlist.query.get_or_404(playlist_id)
     form = NewSongForPlaylistForm()
 
     # Restrict form to songs not already on this playlist
-    curr_on_playlist = [s.id for s in playlist.songs()]
-    form.song.choices = db.session.query(Song.id, Song.title).filter(Song.id.notin_(curr_on_playlist)).all()
-    
+
+    curr_on_playlist = ...
+    form.song.choices = ...
+
     if form.validate_on_submit():
-        
-        new_playlist_song = PlaylistSong(playlist_id=playlist_id, song_id=form.song.data)
-        db.session.add(new_playlist_song)
-        db.session.commit()
-        flash(f"Song added to {playlist.name}", "success")
-        return redirect(f"/playlists/{playlist_id}")
+
+          # ADD THE NECESSARY CODE HERE FOR THIS ROUTE TO WORK
+
+          return redirect(f"/playlists/{playlist_id}")
 
     return render_template("add_song_to_playlist.html",
                              playlist=playlist,
                              form=form)
-

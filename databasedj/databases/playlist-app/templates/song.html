@@ -10,9 +10,9 @@
 <div class="container">
   <h2>Playlists featuring <b>{{song.title}}</b></h2>
 <ul>
-  {% for p in song.playlists_songs%}
+  {% for ps in song.playlists_songs%}
   <a href="/playlists/{{ps.playlist.id}}">
-    <li>{{p.playlist.name}}</li>
+    <li>{{ps.playlist.name}}</li>
   </a>
   {% endfor %}
 </ul>

@@ -19,7 +19,9 @@ class Playlist(db.Model):
         return f"<Playlist {self.name} {self.description}>"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
     name = db.Column(db.String(100), nullable=False,  unique=True)
+
     description = db.Column(db.String(200))
 
     playlists_songs = db.relationship('PlaylistSong', backref='playlist')
@@ -69,7 +71,7 @@ class PlaylistSong(db.Model):
         db.ForeignKey("songs.id",ondelete='CASCADE'),
         primary_key=True
         )
-
+    
     
 
 # DO NOT MODIFY THIS FUNCTION

@@ -27,3 +27,27 @@ class NewSongForPlaylistForm(FlaskForm):
     """Form for adding a song to playlist."""
 
     song = SelectField('Song To Add', coerce=int)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
