@@ -66,7 +66,7 @@ class FriendGraph
         if ( !seen.has( neighbor ) )
         {
           toVisitStack.push( neighbor );
-          seen.add( neighbor );
+          seen.add( neighbor );     
         }
       }
     }
